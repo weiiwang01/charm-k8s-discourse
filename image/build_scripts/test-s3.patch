@@ -1,0 +1,46 @@
+diff --git a/app/models/site_setting.rb b/app/models/site_setting.rb
+index 89a5e923fc..dccc27f00e 100644
+--- a/app/models/site_setting.rb
++++ b/app/models/site_setting.rb
+@@ -164,7 +164,7 @@ class SiteSetting < ActiveRecord::Base
+           "//#{bucket}.s3.dualstack.#{SiteSetting.Upload.s3_region}.amazonaws.com"
+         end
+       else
+-        "//#{bucket}.#{url_basename}"
++        "//172.31.78.233:8080/v1/AUTH_d7c516ae94514d6882e2e7d2bdfe89bc/#{bucket}"
+       end
+     end
+   end
+diff --git a/lib/file_store/to_s3_migration.rb b/lib/file_store/to_s3_migration.rb
+index 9af8aa3994..cb53e1d631 100644
+--- a/lib/file_store/to_s3_migration.rb
++++ b/lib/file_store/to_s3_migration.rb
+@@ -159,8 +159,10 @@ module FileStore
+ 
+       bucket_has_folder_path = true if @s3_bucket.include? "/"
+       public_directory = Rails.root.join("public").to_s
+-
+-      s3 = Aws::S3::Client.new(@s3_client_options)
++      s3_client_options_for_test = @s3_client_options.clone
++      s3_client_options_for_test[:require_https_for_sse_cpk] = false
++      s3_client_options_for_test[:force_path_style] = true
++      s3 = Aws::S3::Client.new(s3_client_options_for_test)
+ 
+       if bucket_has_folder_path
+         bucket, folder = S3Helper.get_bucket_and_folder_path(@s3_bucket)
+diff --git a/lib/s3_helper.rb b/lib/s3_helper.rb
+index 636b27800c..68b008914c 100644
+--- a/lib/s3_helper.rb
++++ b/lib/s3_helper.rb
+@@ -234,7 +234,10 @@ class S3Helper
+   end
+ 
+   def s3_client
+-    @s3_client ||= Aws::S3::Client.new(@s3_options)
++    s3_client_options_for_test = @s3_options.clone
++    s3_client_options_for_test[:require_https_for_sse_cpk] = false
++    s3_client_options_for_test[:force_path_style] = true
++    @s3_client ||= Aws::S3::Client.new(s3_client_options_for_test)
+   end
+ 
+   def s3_inventory_path(path = 'inventory')
